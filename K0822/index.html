@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luxury Furniture</title>
+<script src="js/images.js"></script>
+<script src="js/text.js"></script>
+<link id="preloadBanner1" rel="preload" as="image">
+<link id="preloadBanner2" rel="preload" as="image">
+<link id="preloadBanner3" rel="preload" as="image">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="header">
+    <div class="logo"><img id="siteLogo" decoding="async" alt=""></div>
+    <nav>
+        <a id="navHome" href="index.html"></a>
+        <a id="navProducts" href="products.html"></a>
+        <a id="navCollections" href="products.html"></a>
+        <a id="navAbout" href="#about"></a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-slide active">
+        <img id="bannerImage1" fetchpriority="high" decoding="async">
+        <div class="hero-content"><h1 id="hero1Title"></h1><p id="hero1Text"></p><a id="hero1Button" href="products.html"></a></div>
+    </div>
+    <div class="hero-slide">
+        <img id="bannerImage2" loading="eager" decoding="async">
+        <div class="hero-content"><h1 id="hero2Title"></h1><p id="hero2Text"></p><a id="hero2Button" href="products.html"></a></div>
+    </div>
+    <div class="hero-slide">
+        <img id="bannerImage3" loading="eager" decoding="async">
+        <div class="hero-content"><h1 id="hero3Title"></h1><p id="hero3Text"></p><a id="hero3Button" href="products.html"></a></div>
+    </div>
+    <button class="hero-prev" type="button" aria-label="Previous slide">‹</button>
+    <button class="hero-next" type="button" aria-label="Next slide">›</button>
+    <div class="hero-dots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
+</section>
+
+<section class="collections">
+    <h2 id="collectionsTitle"></h2>
+    <p id="collectionsText"></p>
+    <div class="collection-grid">
+        <a href="products.html?category=11"><img id="collectionCard1Image" loading="lazy" decoding="async"><h3 id="collectionCard1Title"></h3></a>
+        <a href="products.html?category=12"><img id="collectionCard2Image" loading="lazy" decoding="async"><h3 id="collectionCard2Title"></h3></a>
+        <a href="products.html?category=2"><img id="collectionCard3Image" loading="lazy" decoding="async"><h3 id="collectionCard3Title"></h3></a>
+    </div>
+</section>
+
+<section id="about" class="about"><h2 id="aboutTitle"></h2><p id="aboutText"></p></section>
+
+<a id="homeWhatsApp" class="whatsapp-float" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+
+<footer class="site-footer"><div class="footer-inner"><span id="footerCopyright"></span><a id="footerWhatsApp" target="_blank" rel="noopener noreferrer"></a></div></footer>
+
+<script>
+const setText = (id, value, html = false) => { const el = document.getElementById(id); if (el) html ? el.innerHTML = value : el.textContent = value; };
+const setImage = (id, config) => { const el = document.getElementById(id); if (!el || !config) return; el.src = config.src; el.alt = config.alt; };
+
+setImage("siteLogo", siteImages.logo);
+["bannerImage1","bannerImage2","bannerImage3"].forEach((id,i) => setImage(id, siteImages.banners[i]));
+setImage("collectionCard1Image", siteImages.cards.card1);
+setImage("collectionCard2Image", siteImages.cards.card2);
+setImage("collectionCard3Image", siteImages.cards.card3);
+
+["preloadBanner1","preloadBanner2","preloadBanner3"].forEach((id,i) => { const el=document.getElementById(id); if(el) el.href=siteImages.banners[i].src; });
+
+setText("navHome", siteText.nav.home); setText("navProducts", siteText.nav.products); setText("navCollections", siteText.nav.collections); setText("navAbout", siteText.nav.about);
+setText("hero1Title", siteText.home.hero1Title, true); setText("hero1Text", siteText.home.hero1Text); setText("hero1Button", siteText.home.hero1Button);
+setText("hero2Title", siteText.home.hero2Title, true); setText("hero2Text", siteText.home.hero2Text); setText("hero2Button", siteText.home.hero2Button);
+setText("hero3Title", siteText.home.hero3Title, true); setText("hero3Text", siteText.home.hero3Text); setText("hero3Button", siteText.home.hero3Button);
+setText("collectionsTitle", siteText.home.collectionsTitle); setText("collectionsText", siteText.home.collectionsText);
+setText(
+    "collectionCard1Title",
+    siteText.home.cards.card1
+);
+
+setText(
+    "collectionCard2Title",
+    siteText.home.cards.card2
+);
+
+setText(
+    "collectionCard3Title",
+    siteText.home.cards.card3
+);
+setText("aboutTitle", siteText.home.aboutTitle); setText("aboutText", siteText.home.aboutText);
+setText("footerCopyright", siteText.footer.copyright); setText("footerWhatsApp", siteText.footer.whatsapp);
+const waUrl = `https://wa.me/${siteText.whatsapp.number}`; document.getElementById("homeWhatsApp").href=waUrl; document.getElementById("footerWhatsApp").href=waUrl;
+</script>
+
+<script>
+const slides=document.querySelectorAll('.hero-slide');
+const dots=document.querySelectorAll('.dot');
+const nextButton=document.querySelector('.hero-next');
+const prevButton=document.querySelector('.hero-prev');
+const hero=document.querySelector('.hero');
+let index=0, autoPlay;
+const showSlide=i=>{slides.forEach(s=>s.classList.remove('active'));dots.forEach(d=>d.classList.remove('active'));slides[i]?.classList.add('active');dots[i]?.classList.add('active');index=i;};
+const nextSlide=()=>showSlide((index+1)%slides.length);
+const prevSlide=()=>showSlide((index-1+slides.length)%slides.length);
+nextButton.addEventListener('click',nextSlide);prevButton.addEventListener('click',prevSlide);
+dots.forEach((dot,i)=>dot.addEventListener('click',()=>showSlide(i)));
+const startAutoPlay=()=>{clearInterval(autoPlay);autoPlay=setInterval(nextSlide,3000)};const stopAutoPlay=()=>clearInterval(autoPlay);
+hero.addEventListener('mouseenter',stopAutoPlay);hero.addEventListener('mouseleave',startAutoPlay);startAutoPlay();
+</script>
+</body>
+</html>

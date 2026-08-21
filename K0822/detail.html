@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Detail</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/text.js"></script>
+<script src="js/images.js"></script>
+<script src="js/products.js"></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="logo">
+        <img id="siteLogo" decoding="async" alt="">
+    </div>
+    <nav>
+        <a id="navHome" href="index.html"></a>
+        <a id="navProducts" href="products.html"></a>
+        <a id="navCollections" href="products.html"></a>
+        <a id="navAbout" href="index.html#about"></a>
+    </nav>
+</header>
+
+<section class="detail-page">
+    <button id="backToProducts" class="back-to-products" type="button"></button>
+
+    <div class="detail-container">
+        <div class="detail-images">
+            <img id="mainImage" class="main-image" alt="Product Image">
+            <div id="thumbList" class="thumb-list"></div>
+        </div>
+
+        <div class="detail-info">
+            <h1 id="productName"></h1>
+            <p id="productDescription" class="description"></p>
+            <h2 id="specificationsTitle"></h2>
+            <pre id="productSpec"></pre>
+            <a id="whatsappBtn" class="contact-btn" target="_blank" rel="noopener noreferrer"></a>
+        </div>
+    </div>
+</section>
+
+<div id="imageLightbox" class="image-lightbox">
+    <button id="lightboxClose" class="lightbox-close" type="button">×</button>
+    <button id="lightboxPrev" class="lightbox-prev" type="button">‹</button>
+    <div id="lightboxStage" class="lightbox-stage">
+        <img id="lightboxImage" class="lightbox-image" alt="Product Image">
+    </div>
+    <button id="lightboxNext" class="lightbox-next" type="button">›</button>
+    <div id="lightboxCounter" class="lightbox-counter"></div>
+</div>
+
+<footer class="site-footer">
+    <div class="footer-inner">
+        <span id="footerCopyright"></span>
+        <a id="footerWhatsApp" target="_blank" rel="noopener noreferrer"></a>
+    </div>
+</footer>
+
+<script>
+document.getElementById("siteLogo").src = siteImages.logo.src;
+document.getElementById("siteLogo").alt = siteImages.logo.alt;
+
+document.getElementById("navHome").textContent = siteText.nav.home;
+document.getElementById("navProducts").textContent = siteText.nav.products;
+document.getElementById("navCollections").textContent = siteText.nav.collections;
+document.getElementById("navAbout").textContent = siteText.nav.about;
+document.getElementById("backToProducts").textContent = siteText.detail.backToProducts;
+document.getElementById("specificationsTitle").textContent = siteText.detail.specifications;
+document.getElementById("whatsappBtn").textContent = siteText.detail.whatsapp;
+document.getElementById("footerCopyright").textContent = siteText.footer.copyright;
+document.getElementById("footerWhatsApp").textContent = siteText.footer.whatsapp;
+document.getElementById("footerWhatsApp").href = "https://wa.me/" + siteText.whatsapp.number;
+</script>
+
+<script>
+const WHATSAPP_NUMBER = siteText.whatsapp.number;
+const params = new URLSearchParams(window.location.search);
+const productId = params.get("id");
+const product = products.find(item => String(item.id) === String(productId));
+
+if (!product) {
+    document.body.innerHTML = `<h1 style="text-align:center;margin-top:200px">Product Not Found</h1>`;
+} else {
+    const $ = id => document.getElementById(id);
+
+    $("productName").textContent = product.name;
+    $("productDescription").textContent = product.description;
+    $("productSpec").textContent = product.specification;
+
+    $("backToProducts").addEventListener("click", () => {
+        const raw = sessionStorage.getItem("recentProduct");
+        if (raw) {
+            try {
+                const recent = JSON.parse(raw);
+                if (recent.url) {
+                    window.location.href = recent.url;
+                    return;
+                }
+            } catch (_) {}
+        }
+        window.location.href = "products.html";
+    });
+
+    let images = Array.isArray(product.images)
+        ? product.images.filter(Boolean).slice(0, 5)
+        : [];
+
+    if (!images.length && product.image) images.push(product.image);
+
+    const mainImage = $("mainImage");
+    const thumbList = $("thumbList");
+    const lightbox = $("imageLightbox");
+    const lightboxStage = $("lightboxStage");
+    const lightboxImage = $("lightboxImage");
+    const counter = $("lightboxCounter");
+
+    let currentIndex = 0;
+    let zoomLevel = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let startOffsetX = 0;
+    let startOffsetY = 0;
+
+    const clampZoom = value => Math.min(3, Math.max(.5, value));
+
+    function updateZoomTransform() {
+        lightboxImage.style.transform = `translate(${offsetX}px,${offsetY}px) scale(${zoomLevel})`;
+    }
+
+    function resetZoom() {
+        zoomLevel = 1;
+        offsetX = 0;
+        offsetY = 0;
+        updateZoomTransform();
+    }
+
+    function updateThumbActive() {
+        thumbList.querySelectorAll(".thumb-item").forEach((thumb, index) => {
+            thumb.classList.toggle("active-thumb", index === currentIndex);
+        });
+    }
+
+    function setMainImage(index) {
+        if (index < 0 || index >= images.length) return;
+        currentIndex = index;
+        mainImage.src = images[index];
+        updateThumbActive();
+    }
+
+    function openLightbox(index) {
+        currentIndex = index;
+        lightboxImage.src = images[index];
+        counter.textContent = `${index + 1} / ${images.length}`;
+        lightbox.classList.add("show");
+        document.body.style.overflow = "hidden";
+        resetZoom();
+    }
+
+    function closeLightbox() {
+        lightbox.classList.remove("show");
+        document.body.style.overflow = "";
+        resetZoom();
+    }
+
+    function updateLightbox() {
+        lightboxImage.src = images[currentIndex];
+        counter.textContent = `${currentIndex + 1} / ${images.length}`;
+        setMainImage(currentIndex);
+        resetZoom();
+    }
+
+    images.forEach((imagePath, index) => {
+        const thumb = document.createElement("div");
+        thumb.className = "thumb-item";
+
+        const image = document.createElement("img");
+        image.src = imagePath;
+        image.alt = product.name;
+        image.loading = "lazy";
+        image.decoding = "async";
+
+        thumb.appendChild(image);
+        thumb.addEventListener("mouseenter", () => setMainImage(index));
+        thumb.addEventListener("click", () => openLightbox(index));
+        thumbList.appendChild(thumb);
+    });
+
+    setMainImage(0);
+
+    mainImage.addEventListener("mousemove", event => {
+        const box = mainImage.getBoundingClientRect();
+        const x = event.clientX - box.left;
+        const y = event.clientY - box.top;
+        const rotateY = (x - box.width / 2) / 20;
+        const rotateX = -(y - box.height / 2) / 20;
+        mainImage.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+    });
+
+    mainImage.addEventListener("mouseleave", () => {
+        mainImage.style.transform = "rotateX(0deg) rotateY(0deg) scale(1)";
+    });
+
+    mainImage.addEventListener("click", () => openLightbox(currentIndex));
+
+    lightboxStage.addEventListener("wheel", event => {
+        event.preventDefault();
+        const direction = event.deltaY < 0 ? 1 : -1;
+        zoomLevel = clampZoom(zoomLevel + direction * .15);
+        if (zoomLevel <= 1) {
+            offsetX = 0;
+            offsetY = 0;
+        }
+        updateZoomTransform();
+    }, { passive: false });
+
+    lightboxImage.addEventListener("dblclick", resetZoom);
+
+    lightboxImage.addEventListener("mousedown", event => {
+        if (zoomLevel <= 1) return;
+        dragging = true;
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        startOffsetX = offsetX;
+        startOffsetY = offsetY;
+        lightboxStage.classList.add("dragging");
+        event.preventDefault();
+    });
+
+    document.addEventListener("mousemove", event => {
+        if (!dragging) return;
+        offsetX = startOffsetX + event.clientX - dragStartX;
+        offsetY = startOffsetY + event.clientY - dragStartY;
+        updateZoomTransform();
+    });
+
+    document.addEventListener("mouseup", () => {
+        dragging = false;
+        lightboxStage.classList.remove("dragging");
+    });
+
+    $("lightboxClose").addEventListener("click", closeLightbox);
+    $("lightboxPrev").addEventListener("click", () => {
+        currentIndex = currentIndex <= 0 ? images.length - 1 : currentIndex - 1;
+        updateLightbox();
+    });
+    $("lightboxNext").addEventListener("click", () => {
+        currentIndex = currentIndex >= images.length - 1 ? 0 : currentIndex + 1;
+        updateLightbox();
+    });
+
+    lightbox.addEventListener("click", event => {
+        if (event.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeLightbox();
+        if (!lightbox.classList.contains("show")) return;
+        if (event.key === "ArrowLeft") $("lightboxPrev").click();
+        if (event.key === "ArrowRight") $("lightboxNext").click();
+    });
+
+    const message = `${siteText.whatsapp.messagePrefix} ${product.name}.`;
+    $("whatsappBtn").href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+</script>
+
+</body>
+</html>
