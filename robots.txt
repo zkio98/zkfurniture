@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zkio98.github.io/zkfurniture/sitemap.xml
